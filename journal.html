@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le Journal Mer</title>
+<style>
+:root{--bg:#0f1a22;--fg:#eef2f5;--muted:#8fa3b3;--line:#26394a;--card:#16232d;--accent:#bcd246;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 14px}
+.logo{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:1.5rem}
+.logo span{color:var(--accent)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips button{flex:none;font:inherit;font-size:.85rem;background:var(--card);border:1px solid var(--line);color:var(--fg);padding:6px 14px;border-radius:20px;cursor:pointer}
+.chips button.on{background:var(--accent);border-color:var(--accent);color:#0f1a22;font-weight:600}
+.mosaic{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:190px;gap:10px;padding:12px;max-width:1100px;margin:0 auto}
+.tile{position:relative;overflow:hidden;border-radius:6px;cursor:pointer;color:#fff;display:flex;align-items:flex-end;transition:transform .15s}
+.tile:hover{transform:scale(1.015)}
+.tile .em{position:absolute;right:8px;top:2px;font-size:4.5rem;opacity:.35}
+.tile.big{grid-column:span 2;grid-row:span 2}
+.tile.big .em{font-size:9rem}
+.tile.wide{grid-column:span 2}
+.tile .txt{position:relative;width:100%;padding:34px 14px 12px;background:linear-gradient(to top,rgba(0,0,0,.75),transparent)}
+.tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--accent)}
+.tile h3{margin:4px 0 0;font-family:Georgia,serif;font-size:1.05rem;line-height:1.25}
+.tile.big h3{font-size:1.9rem}
+.g0{background:linear-gradient(135deg,#0e5a7a,#1d9a8f)}
+.g1{background:linear-gradient(135deg,#2e6b2e,#8bb83a)}
+.g2{background:linear-gradient(135deg,#5b2a86,#d0488a)}
+.g3{background:linear-gradient(135deg,#b3541e,#e9b44c)}
+.reader{position:fixed;inset:0;z-index:20;background:var(--bg);display:none;overflow:hidden}
+.reader.show{display:block}
+.rbar{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;z-index:3}
+.rbar button,.arrow{font:inherit;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.2rem;cursor:pointer}
+.rbar span{background:rgba(0,0,0,.45);color:#fff;padding:5px 12px;border-radius:20px;font-size:.8rem}
+.page{position:absolute;inset:0;overflow-y:auto;transform-origin:center;backface-visibility:hidden}
+.cover{height:42vh;min-height:230px;display:flex;align-items:flex-end;justify-content:center;font-size:8rem;position:relative}
+.cover::after{content:"";position:absolute;inset:auto 0 0;height:70px;background:linear-gradient(to top,var(--bg),transparent)}
+.body{max-width:680px;margin:0 auto;padding:6px 20px calc(60px + env(safe-area-inset-bottom,0px))}
+.body h2{font-family:Georgia,serif;font-size:clamp(1.7rem,6vw,2.5rem);line-height:1.2;margin:8px 0}
+.date{color:var(--muted);font-size:.85rem}
+.body p{font-family:Georgia,serif;font-size:1.1rem;line-height:1.7}
+.arrow{position:absolute;top:50%;margin-top:-20px;z-index:3}
+.arrow.l{left:10px}.arrow.r{right:10px}
+.arrow:disabled{opacity:.25;cursor:default}
+@media(max-width:700px){.mosaic{grid-template-columns:repeat(2,1fr);grid-auto-rows:165px;padding:8px;gap:8px}.tile.big .em{font-size:6rem}.tile.big h3{font-size:1.4rem}}
+</style>
+</head>
+<body>
+<div class="top"><div class="logo">Le Journal <span>Mer</span></div><div class="chips" id="chips"></div></div>
+<div class="mosaic" id="mosaic"></div>
+<div class="reader" id="reader">
+<div class="rbar"><button id="close" aria-label="Fermer">✕</button><span id="count"></span></div>
+<div class="page" id="page"></div>
+<button class="arrow l" id="prev" aria-label="Précédent">‹</button>
+<button class="arrow r" id="next" aria-label="Suivant">›</button>
+</div>
+<script>
+var G={"Actualité":0,"Sport":1,"Culture":2,"Sciences":3};
+var E={"Actualité":"🏙️","Sport":"⚽","Culture":"🎬","Sciences":"🔬"};
+var D=[
+{c:"Actualité",t:"Une nouvelle ère pour notre ville",d:"7 novembre 2026",x:"Le conseil municipal a présenté un grand plan de rénovation des espaces publics. Parcs, pistes cyclables et places piétonnes seront aménagés au cours des prochaines années.\n\nLes habitants pourront donner leur avis lors de réunions ouvertes. Les premiers travaux débuteront au printemps."},
+{c:"Sport",t:"Un derby spectaculaire ce week-end",d:"6 novembre 2026",x:"Les deux équipes se sont quittées sur un score nul après un match plein de rebondissements.\n\nLes supporters ont salué une ambiance exceptionnelle dans les tribunes."},
+{c:"Culture",t:"Le festival du film ouvre ses portes",d:"5 novembre 2026",x:"Une cinquantaine de films venus du monde entier seront projetés pendant une semaine.\n\nDes rencontres avec les réalisateurs sont prévues chaque soir."},
+{c:"Sciences",t:"Une découverte surprenante sur les abeilles",d:"4 novembre 2026",x:"Des chercheurs ont observé que les abeilles s’adaptent plus vite que prévu aux changements de température.\n\nCes résultats pourraient aider à mieux protéger les pollinisateurs."},
+{c:"Actualité",t:"Les transports s’améliorent",d:"3 novembre 2026",x:"De nouvelles lignes de bus entrent en service, avec des horaires étendus le soir et le week-end."},
+{c:"Culture",t:"Les librairies ont la cote",d:"2 novembre 2026",x:"Malgré le numérique, les petites librairies voient revenir les lecteurs, attirés par les conseils personnalisés et les rencontres d’auteurs."},
+{c:"Sport",t:"Les jeunes talents brillent au tournoi",d:"1 novembre 2026",x:"Le tournoi régional a révélé plusieurs joueurs prometteurs, applaudis par un public nombreux."},
+{c:"Sciences",t:"Une mission vers la Lune se prépare",d:"31 octobre 2026",x:"Les équipes finalisent les derniers tests avant le grand départ, prévu dans les prochains mois."}
+];
+var cats=["À la une","Actualité","Sport","Culture","Sciences"],cur="À la une",L=[],idx=0,busy=false;
+function esc(s){return s.replace(/[&<>]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[m]})}
+function chips(){var n=document.getElementById("chips");n.innerHTML="";cats.forEach(function(c){var b=document.createElement("button");b.textContent=c;if(c===cur)b.className="on";b.onclick=function(){cur=c;chips();mosaic()};n.appendChild(b)})}
+function mosaic(){
+L=D.filter(function(a){return cur==="À la une"||a.c===cur});
+var m=document.getElementById("mosaic");m.innerHTML="";
+L.forEach(function(a,i){var t=document.createElement("div");
+t.className="tile g"+G[a.c]+(i===0?" big":i===3?" wide":"");
+t.innerHTML='<span class="em">'+E[a.c]+'</span><div class="txt"><div class="tag">'+esc(a.c)+'</div><h3>'+esc(a.t)+'</h3></div>';
+t.onclick=function(){openR(i)};m.appendChild(t)})}
+function fill(){var a=L[idx],p=document.getElementById("page");
+p.innerHTML='<div class="cover g'+G[a.c]+'">'+E[a.c]+'</div><div class="body"><div class="tag">'+esc(a.c)+'</div><h2>'+esc(a.t)+'</h2><div class="date">'+a.d+'</div>'+a.x.split("\n\n").map(function(s){return"<p>"+esc(s)+"</p>"}).join("")+'</div>';
+p.scrollTop=0;
+document.getElementById("count").textContent=(idx+1)+" / "+L.length;
+document.getElementById("prev").disabled=idx===0;
+document.getElementById("next").disabled=idx===L.length-1}
+function openR(i){idx=i;fill();document.getElementById("reader").className="reader show"}
+function closeR(){document.getElementById("reader").className="reader"}
+function go(d){
+if(busy||idx+d<0||idx+d>=L.length)return;busy=true;
+var p=document.getElementById("page");
+p.style.transition="transform .22s ease-in,opacity .22s";
+p.style.transform="perspective(1200px) rotateY("+(d>0?-75:75)+"deg)";p.style.opacity="0";
+setTimeout(function(){
+idx+=d;fill();
+p.style.transition="none";p.style.transform="perspective(1200px) rotateY("+(d>0?75:-75)+"deg)";
+void p.offsetWidth;
+p.style.transition="transform .22s ease-out,opacity .22s";p.style.transform="none";p.style.opacity="1";
+setTimeout(function(){busy=false},230)},220)}
+document.getElementById("close").onclick=closeR;
+document.getElementById("prev").onclick=function(){go(-1)};
+document.getElementById("next").onclick=function(){go(1)};
+document.addEventListener("keydown",function(e){var r=document.getElementById("reader");if(r.className.indexOf("show")<0)return;
+if(e.key==="ArrowRight")go(1);if(e.key==="ArrowLeft")go(-1);if(e.key==="Escape")closeR()});
+var sx=0;
+document.getElementById("reader").addEventListener("touchstart",function(e){sx=e.touches[0].clientX},{passive:true});
+document.getElementById("reader").addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>60)go(dx<0?1:-1)},{passive:true});
+chips();mosaic();
+</script>
+</body>
+</html>
